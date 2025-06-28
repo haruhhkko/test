@@ -120,7 +120,7 @@ function addDragAndDropListeners() {
             draggedItem.clone.style.display = ''; // Show clone again
 
             if (targetElement && targetElement.classList.contains('taskbar-item') && targetElement !== draggedItem) {
-                const afterElement = getDragAfterElement(taskbar, touch.clientX, targetElement);
+                const afterElement = getDragAfterElement(taskbar, touch.clientX);
                 if (afterElement == null) {
                     taskbar.appendChild(draggedItem);
                 } else {
@@ -154,25 +154,9 @@ taskbar.addEventListener('dragover', e => {
     }
 });
 
-function getDragAfterElement(container, x, targetElement = null) {
+function getDragAfterElement(container, x) {
     const draggableElements = [...container.querySelectorAll('.taskbar-item:not(.dragging)')];
 
-    if (targetElement) { // For touch events, we already have a target
-        const targetRect = targetElement.getBoundingClientRect();
-        const targetCenter = targetRect.left + targetRect.width / 2;
-        if (x < targetCenter) {
-            return targetElement; // Insert before target
-        } else {
-            const nextSibling = targetElement.nextElementSibling;
-            if (nextSibling && nextSibling.classList.contains('taskbar-item')) {
-                return nextSibling; // Insert after target
-            } else {
-                return null; // Append to end
-            }
-        }
-    }
-
-    // For mouse events
     return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect();
         const offset = x - box.left - box.width / 2;
