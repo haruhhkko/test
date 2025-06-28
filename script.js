@@ -53,9 +53,12 @@ function initGame() {
 function addDragAndDropListeners() {
     const taskbarItems = document.querySelectorAll('#taskbar .taskbar-item');
     taskbarItems.forEach(item => {
-        item.addEventListener('dragstart', () => {
+        // Mouse events
+        item.addEventListener('dragstart', (e) => {
             draggedItem = item;
             setTimeout(() => item.classList.add('dragging'), 0);
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', item.innerHTML);
         });
         item.addEventListener('dragend', () => {
             setTimeout(() => {
@@ -64,6 +67,66 @@ function addDragAndDropListeners() {
                 }
                 draggedItem = null;
             }, 0);
+        });
+
+        // Touch events
+        item.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Prevent scrolling
+            draggedItem = item;
+            item.classList.add('dragging');
+            // Store initial touch position for calculating offset
+            const touch = e.touches[0];
+            const rect = item.getBoundingClientRect();
+            item.dataset.offsetX = touch.clientX - rect.left;
+            item.dataset.offsetY = touch.clientY - rect.top;
+
+            // Create a clone for visual feedback during touch drag
+            const clone = item.cloneNode(true);
+            clone.style.position = 'fixed';
+            clone.style.left = `${touch.clientX - item.dataset.offsetX}px`;
+            clone.style.top = `${touch.clientY - item.dataset.offsetY}px`;
+            clone.style.width = `${rect.width}px`;
+            clone.style.height = `${rect.height}px`;
+            clone.style.pointerEvents = 'none'; // So it doesn't interfere with elementFromPoint
+            clone.style.zIndex = '1000';
+            clone.classList.add('dragging-clone');
+            document.body.appendChild(clone);
+            draggedItem.style.opacity = '0'; // Hide original item
+            draggedItem.clone = clone; // Store clone reference
+        });
+
+        item.addEventListener('touchmove', (e) => {
+            e.preventDefault(); // Prevent scrolling
+            if (!draggedItem || !draggedItem.clone) return;
+
+            const touch = e.touches[0];
+            draggedItem.clone.style.left = `${touch.clientX - draggedItem.dataset.offsetX}px`;
+            draggedItem.clone.style.top = `${touch.clientY - draggedItem.dataset.offsetY}px`;
+
+            // Determine the element under the touch
+            draggedItem.clone.style.display = 'none'; // Temporarily hide clone to get element underneath
+            const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+            draggedItem.clone.style.display = ''; // Show clone again
+
+            if (targetElement && targetElement.classList.contains('taskbar-item') && targetElement !== draggedItem) {
+                const afterElement = getDragAfterElement(taskbar, touch.clientX, targetElement);
+                if (afterElement == null) {
+                    taskbar.appendChild(draggedItem);
+                } else {
+                    taskbar.insertBefore(draggedItem, afterElement);
+                }
+            }
+        });
+
+        item.addEventListener('touchend', () => {
+            if (!draggedItem) return;
+            draggedItem.classList.remove('dragging');
+            draggedItem.style.opacity = '1'; // Show original item
+            if (draggedItem.clone) {
+                draggedItem.clone.remove();
+                draggedItem.clone = null;
+            }
+            draggedItem = null;
         });
     });
 }
@@ -80,8 +143,25 @@ taskbar.addEventListener('dragover', e => {
     }
 });
 
-function getDragAfterElement(container, x) {
+function getDragAfterElement(container, x, targetElement = null) {
     const draggableElements = [...container.querySelectorAll('.taskbar-item:not(.dragging)')];
+
+    if (targetElement) { // For touch events, we already have a target
+        const targetRect = targetElement.getBoundingClientRect();
+        const targetCenter = targetRect.left + targetRect.width / 2;
+        if (x < targetCenter) {
+            return targetElement; // Insert before target
+        } else {
+            const nextSibling = targetElement.nextElementSibling;
+            if (nextSibling && nextSibling.classList.contains('taskbar-item')) {
+                return nextSibling; // Insert after target
+            } else {
+                return null; // Append to end
+            }
+        }
+    }
+
+    // For mouse events
     return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect();
         const offset = x - box.left - box.width / 2;
