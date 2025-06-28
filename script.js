@@ -83,20 +83,19 @@ function addDragAndDropListeners() {
             // Create a clone for visual feedback during touch drag
             const clone = item.cloneNode(true);
             clone.style.position = 'fixed';
-            clone.style.left = `${rect.left}px`;
-            clone.style.top = `${rect.top}px`;
+            // Use transform for positioning to handle zooming better
+            clone.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0)`;
             clone.style.width = `${rect.width}px`;
             clone.style.height = `${rect.height}px`;
             clone.style.pointerEvents = 'none'; // So it doesn't interfere with elementFromPoint
             clone.style.zIndex = '1000';
             clone.classList.add('dragging-clone');
-            clone.style.transform = 'translate3d(0,0,0)'; // Enable GPU acceleration
             document.body.appendChild(clone);
             draggedItem.style.opacity = '0'; // Hide original item
             draggedItem.clone = clone; // Store clone reference
 
             console.log('touchstart - original rect:', rect);
-            console.log('touchstart - clone position:', clone.style.left, clone.style.top);
+            console.log('touchstart - clone transform:', clone.style.transform);
         });
 
         item.addEventListener('touchmove', (e) => {
@@ -104,12 +103,11 @@ function addDragAndDropListeners() {
             if (!draggedItem || !draggedItem.clone) return;
 
             const touch = e.touches[0];
-            // Move the clone based on touch position and initial offset
-            draggedItem.clone.style.left = `${touch.clientX - draggedItem.dataset.offsetX}px`;
-            draggedItem.clone.style.top = `${touch.clientY - draggedItem.dataset.offsetY}px`;
+            // Move the clone based on touch position and initial offset using transform
+            draggedItem.clone.style.transform = `translate3d(${touch.clientX - draggedItem.dataset.offsetX}px, ${touch.clientY - draggedItem.dataset.offsetY}px, 0)`;
 
             console.log('touchmove - touch clientX, clientY:', touch.clientX, touch.clientY);
-            console.log('touchmove - clone position:', draggedItem.clone.style.left, draggedItem.clone.style.top);
+            console.log('touchmove - clone transform:', draggedItem.clone.style.transform);
 
             // Determine the element under the touch
             draggedItem.clone.style.display = 'none'; // Temporarily hide clone to get element underneath
