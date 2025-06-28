@@ -83,8 +83,8 @@ function addDragAndDropListeners() {
             // Create a clone for visual feedback during touch drag
             const clone = item.cloneNode(true);
             clone.style.position = 'fixed';
-            // Use transform for positioning to handle zooming better
-            clone.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0)`;
+            // Set initial transform based on touch position and calculated offset
+            clone.style.transform = `translate3d(${touch.clientX - item.dataset.offsetX}px, ${touch.clientY - item.dataset.offsetY}px, 0)`;
             clone.style.width = `${rect.width}px`;
             clone.style.height = `${rect.height}px`;
             clone.style.pointerEvents = 'none'; // So it doesn't interfere with elementFromPoint
