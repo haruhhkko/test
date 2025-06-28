@@ -9,10 +9,6 @@ const ALL_ICONS = ['💻', '📁', '📧', '🛒', '🎮', '🎵', '📸', '📊
 
 let draggedItem = null;
 let currentLevel = 1;
-let initialTouchX = 0;
-let initialTouchY = 0;
-let initialElementX = 0;
-let initialElementY = 0;
 
 let timeLeft = 60;
 let timerInterval;
@@ -54,13 +50,13 @@ function gameOver() {
     // Disable drag and drop
     const taskbarItems = document.querySelectorAll('#taskbar .taskbar-item');
     taskbarItems.forEach(item => {
-        item.removeEventListener('dragstart', handleDragStart);
-        item.removeEventListener('dragend', handleDragEnd);
-        item.removeEventListener('touchstart', handleTouchStart);
-        item.removeEventListener('touchmove', handleTouchMove);
-        item.removeEventListener('touchend', handleTouchEnd);
+        item.removeEventListener('mousedown', handleDragStartOrTouchStart);
+        item.removeEventListener('touchstart', handleDragStartOrTouchStart);
     });
-    taskbar.removeEventListener('dragover', handleDragOver);
+    document.removeEventListener('mousemove', handleDragMoveOrTouchMove);
+    document.removeEventListener('touchmove', handleDragMoveOrTouchMove);
+    document.removeEventListener('mouseup', handleDragEndOrTouchEnd);
+    document.removeEventListener('touchend', handleDragEndOrTouchEnd);
 }
 
 function initGame() {
@@ -89,73 +85,49 @@ function initGame() {
     checkButton.disabled = false;
 }
 
-function handleDragStart(e) {
+function handleDragStartOrTouchStart(e) {
+    e.preventDefault(); // Prevent default browser drag/scroll behavior
     draggedItem = this;
-    setTimeout(() => this.classList.add('dragging'), 0);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', this.innerHTML);
-    console.log('dragstart', this.textContent);
-}
+    draggedItem.classList.add('dragging');
 
-function handleDragEnd() {
-    setTimeout(() => {
-        if (draggedItem) {
-            draggedItem.classList.remove('dragging');
-        }
-        draggedItem = null;
-    }, 0);
-    console.log('dragend');
-}
+    const clientX = e.clientX || e.touches[0].clientX;
+    const clientY = e.clientY || e.touches[0].clientY;
+    const rect = draggedItem.getBoundingClientRect();
 
-function handleTouchStart(e) {
-    e.preventDefault(); // Prevent scrolling
-    draggedItem = this;
-    this.classList.add('dragging');
-    
-    const touch = e.touches[0];
-    const rect = this.getBoundingClientRect();
-    
-    initialTouchX = touch.clientX;
-    initialTouchY = touch.clientY;
-    initialElementX = rect.left;
-    initialElementY = rect.top;
+    draggedItem.dataset.offsetX = clientX - rect.left;
+    draggedItem.dataset.offsetY = clientY - rect.top;
 
-    // Create a clone for visual feedback during touch drag
-    const clone = this.cloneNode(true);
+    // Create a clone for visual feedback
+    const clone = draggedItem.cloneNode(true);
     clone.style.position = 'fixed';
-    clone.style.transform = `translate3d(${initialElementX}px, ${initialElementY}px, 0)`;
+    clone.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0)`;
     clone.style.width = `${rect.width}px`;
     clone.style.height = `${rect.height}px`;
-    clone.style.pointerEvents = 'none'; // So it doesn't interfere with elementFromPoint
+    clone.style.pointerEvents = 'none';
     clone.style.zIndex = '1000';
     clone.classList.add('dragging-clone');
     document.body.appendChild(clone);
-    draggedItem.style.opacity = '0'; // Hide original item
-    draggedItem.clone = clone; // Store clone reference
+    draggedItem.style.opacity = '0';
+    draggedItem.clone = clone;
 
-    console.log('touchstart - original rect:', rect);
-    console.log('touchstart - clone transform:', clone.style.transform);
+    document.addEventListener('mousemove', handleDragMoveOrTouchMove);
+    document.addEventListener('touchmove', handleDragMoveOrTouchMove);
+    document.addEventListener('mouseup', handleDragEndOrTouchEnd);
+    document.addEventListener('touchend', handleDragEndOrTouchEnd);
 }
 
-function handleTouchMove(e) {
-    e.preventDefault(); // Prevent scrolling
+function handleDragMoveOrTouchMove(e) {
     if (!draggedItem || !draggedItem.clone) return;
 
-    const touch = e.touches[0];
-    const deltaX = touch.clientX - initialTouchX;
-    const deltaY = touch.clientY - initialTouchY;
+    const clientX = e.clientX || e.touches[0].clientX;
+    const clientY = e.clientY || e.touches[0].clientY;
 
-    draggedItem.clone.style.transform = `translate3d(${initialElementX + deltaX}px, ${initialElementY + deltaY}px, 0)`;
+    draggedItem.clone.style.transform = `translate3d(${clientX - draggedItem.dataset.offsetX}px, ${clientY - draggedItem.dataset.offsetY}px, 0)`;
 
-    console.log('touchmove - touch clientX, clientY:', touch.clientX, touch.clientY);
-    console.log('touchmove - clone transform:', draggedItem.clone.style.transform);
-
-    // Determine the element under the touch
-    // Removed display: none/'' as pointer-events: none should be sufficient
-    const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+    const targetElement = document.elementFromPoint(clientX, clientY);
 
     if (targetElement && targetElement.classList.contains('taskbar-item') && targetElement !== draggedItem) {
-        const afterElement = getDragAfterElement(taskbar, touch.clientX);
+        const afterElement = getDragAfterElement(taskbar, clientX);
         if (afterElement == null) {
             taskbar.appendChild(draggedItem);
         } else {
@@ -164,41 +136,28 @@ function handleTouchMove(e) {
     }
 }
 
-function handleTouchEnd() {
+function handleDragEndOrTouchEnd() {
     if (!draggedItem) return;
     draggedItem.classList.remove('dragging');
-    draggedItem.style.opacity = '1'; // Show original item
+    draggedItem.style.opacity = '1';
     if (draggedItem.clone) {
         draggedItem.clone.remove();
         draggedItem.clone = null;
     }
     draggedItem = null;
-    console.log('touchend');
+
+    document.removeEventListener('mousemove', handleDragMoveOrTouchMove);
+    document.removeEventListener('touchmove', handleDragMoveOrTouchMove);
+    document.removeEventListener('mouseup', handleDragEndOrTouchEnd);
+    document.removeEventListener('touchend', handleDragEndOrTouchEnd);
 }
 
 function addDragAndDropListeners() {
     const taskbarItems = document.querySelectorAll('#taskbar .taskbar-item');
     taskbarItems.forEach(item => {
-        item.addEventListener('dragstart', handleDragStart);
-        item.addEventListener('dragend', handleDragEnd);
-        item.addEventListener('touchstart', handleTouchStart);
-        item.addEventListener('touchmove', handleTouchMove);
-        item.addEventListener('touchend', handleTouchEnd);
+        item.addEventListener('mousedown', handleDragStartOrTouchStart);
+        item.addEventListener('touchstart', handleDragStartOrTouchStart);
     });
-    taskbar.addEventListener('dragover', handleDragOver);
-}
-
-function handleDragOver(e) {
-    e.preventDefault();
-    const afterElement = getDragAfterElement(taskbar, e.clientX);
-    if (draggedItem) {
-        if (afterElement == null) {
-            taskbar.appendChild(draggedItem);
-        } else {
-            taskbar.insertBefore(draggedItem, afterElement);
-        }
-    }
-    console.log('dragover', e.clientX);
 }
 
 function getDragAfterElement(container, x) {
