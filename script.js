@@ -19,10 +19,17 @@ async function loadVersion() {
     try {
         const response = await fetch('version.txt');
         const version = await response.text();
-        versionDisplayElement.textContent = `Version: ${version.trim()}`;
+        if (versionDisplayElement) {
+            versionDisplayElement.textContent = `Version: ${version.trim()}`;
+            console.log('Version displayed:', version.trim());
+        } else {
+            console.error('versionDisplayElement not found in DOM.');
+        }
     } catch (error) {
         console.error('Error loading version:', error);
-        versionDisplayElement.textContent = 'Version: N/A';
+        if (versionDisplayElement) {
+            versionDisplayElement.textContent = 'Version: N/A';
+        }
     }
 }
 
@@ -205,6 +212,8 @@ checkButton.addEventListener('click', () => {
     }
 });
 
-initGame();
-loadVersion(); // Load version on game initialization
+document.addEventListener('DOMContentLoaded', () => {
+    initGame();
+    loadVersion();
+});
 
