@@ -7,10 +7,10 @@ body {
 
 #taskbar, #example-taskbar {
     display: flex;
-    flex-wrap: nowrap; /* Changed to nowrap to keep items in a single row */
+    flex-wrap: wrap; /* Changed to wrap */
     justify-content: center;
     align-items: center;
-    height: 50px; /* Fixed height for single row */
+    min-height: 50px; /* Use min-height to allow vertical expansion */
     background-color: #222;
     padding: 5px;
     box-sizing: border-box;
@@ -19,7 +19,7 @@ body {
     width: auto; /* Allow width to adjust */
     margin-left: auto;
     margin-right: auto;
-    overflow-x: auto; /* Add scroll if content overflows */
+    overflow-x: hidden; /* Hide horizontal scrollbar as items will wrap */
 }
 
 #example-taskbar .taskbar-item {

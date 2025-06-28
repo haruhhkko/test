@@ -60,6 +60,8 @@ function addDragAndDropListeners() {
         item.addEventListener('dragstart', (e) => {
             draggedItem = item;
             setTimeout(() => item.classList.add('dragging'), 0);
+            e.dataTransfer.effectAllowed = 'move'; // Re-added for desktop drag
+            e.dataTransfer.setData('text/html', item.innerHTML); // Re-added for desktop drag
         });
         item.addEventListener('dragend', () => {
             setTimeout(() => {
