@@ -8,6 +8,10 @@ const ALL_ICONS = ['💻', '📁', '📧', '🛒', '🎮', '🎵', '📸', '📊
 
 let draggedItem = null;
 let currentLevel = 1;
+let initialTouchX = 0;
+let initialTouchY = 0;
+let initialElementX = 0;
+let initialElementY = 0;
 
 function shuffle(array) {
     let currentIndex = array.length,  randomIndex;
@@ -56,7 +60,6 @@ function addDragAndDropListeners() {
         item.addEventListener('dragstart', (e) => {
             draggedItem = item;
             setTimeout(() => item.classList.add('dragging'), 0);
-            // Removed e.dataTransfer.effectAllowed and e.dataTransfer.setData
         });
         item.addEventListener('dragend', () => {
             setTimeout(() => {
@@ -76,15 +79,15 @@ function addDragAndDropListeners() {
             const touch = e.touches[0];
             const rect = item.getBoundingClientRect();
             
-            // Calculate offset from touch point to the top-left corner of the item
-            item.dataset.offsetX = touch.clientX - rect.left;
-            item.dataset.offsetY = touch.clientY - rect.top;
+            initialTouchX = touch.clientX;
+            initialTouchY = touch.clientY;
+            initialElementX = rect.left;
+            initialElementY = rect.top;
 
             // Create a clone for visual feedback during touch drag
             const clone = item.cloneNode(true);
             clone.style.position = 'fixed';
-            // Set initial transform based on touch position and calculated offset
-            clone.style.transform = `translate3d(${touch.clientX - item.dataset.offsetX}px, ${touch.clientY - item.dataset.offsetY}px, 0)`;
+            clone.style.transform = `translate3d(${initialElementX}px, ${initialElementY}px, 0)`;
             clone.style.width = `${rect.width}px`;
             clone.style.height = `${rect.height}px`;
             clone.style.pointerEvents = 'none'; // So it doesn't interfere with elementFromPoint
@@ -103,8 +106,10 @@ function addDragAndDropListeners() {
             if (!draggedItem || !draggedItem.clone) return;
 
             const touch = e.touches[0];
-            // Move the clone based on touch position and initial offset using transform
-            draggedItem.clone.style.transform = `translate3d(${touch.clientX - draggedItem.dataset.offsetX}px, ${touch.clientY - draggedItem.dataset.offsetY}px, 0)`;
+            const deltaX = touch.clientX - initialTouchX;
+            const deltaY = touch.clientY - initialTouchY;
+
+            draggedItem.clone.style.transform = `translate3d(${initialElementX + deltaX}px, ${initialElementY + deltaY}px, 0)`;
 
             console.log('touchmove - touch clientX, clientY:', touch.clientX, touch.clientY);
             console.log('touchmove - clone transform:', draggedItem.clone.style.transform);
