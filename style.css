@@ -52,42 +52,16 @@ body {
     opacity: 0.5;
 }
 
-#check-button {
-    margin-top: 20px;
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-#result-message {
-    margin-top: 20px;
-    font-size: 18px;
-    font-weight: bold;
-}
-
-#example-taskbar .taskbar-item {
-    cursor: default;
-}
-
-.taskbar-item {
-    width: 40px;
-    height: 40px;
-    margin: 0 5px;
-    background-color: transparent;
-    border: none;
-    cursor: grab;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 30px; /* Increased font size for emojis */
-}
-
-.taskbar-item:active {
-    cursor: grabbing;
-}
-
-.dragging {
-    opacity: 0.5;
+.dragging-clone {
+    background-color: rgba(0, 0, 0, 0.7); /* Darker background for visibility */
+    color: white; /* Ensure emoji is visible */
+    border: 2px solid #007bff; /* Highlight border */
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); /* Add shadow */
+    pointer-events: none; /* Crucial: allows elementFromPoint to work */
+    z-index: 9999; /* Ensure it's always on top */
+    border-radius: 5px; /* Match item border-radius */
+    transform: rotate(5deg); /* Slight rotation for visual effect */
+    transition: none; /* No transition during drag */
 }
 
 #check-button {
@@ -102,3 +76,5 @@ body {
     font-size: 18px;
     font-weight: bold;
 }
+
+

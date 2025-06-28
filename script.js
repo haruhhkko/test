@@ -19,10 +19,9 @@ function shuffle(array) {
     return array;
 }
 
-function createIcon(emoji, draggable) {
+function createIcon(emoji) {
     const item = document.createElement('div');
     item.className = 'taskbar-item';
-    item.draggable = draggable;
     item.textContent = emoji; // テキストとして絵文字を設定
     return item;
 }
@@ -38,12 +37,12 @@ function initGame() {
 
     const correctOrder = shuffle([...iconsForLevel]);
     correctOrder.forEach(emoji => {
-        exampleTaskbar.appendChild(createIcon(emoji, false));
+        exampleTaskbar.appendChild(createIcon(emoji));
     });
 
     const userOrder = shuffle([...iconsForLevel]);
     userOrder.forEach(emoji => {
-        const item = createIcon(emoji, true);
+        const item = createIcon(emoji);
         taskbar.appendChild(item);
     });
 
@@ -57,8 +56,7 @@ function addDragAndDropListeners() {
         item.addEventListener('dragstart', (e) => {
             draggedItem = item;
             setTimeout(() => item.classList.add('dragging'), 0);
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/html', item.innerHTML);
+            // Removed e.dataTransfer.effectAllowed and e.dataTransfer.setData
         });
         item.addEventListener('dragend', () => {
             setTimeout(() => {
@@ -74,25 +72,31 @@ function addDragAndDropListeners() {
             e.preventDefault(); // Prevent scrolling
             draggedItem = item;
             item.classList.add('dragging');
-            // Store initial touch position for calculating offset
+            
             const touch = e.touches[0];
             const rect = item.getBoundingClientRect();
+            
+            // Calculate offset from touch point to the top-left corner of the item
             item.dataset.offsetX = touch.clientX - rect.left;
             item.dataset.offsetY = touch.clientY - rect.top;
 
             // Create a clone for visual feedback during touch drag
             const clone = item.cloneNode(true);
             clone.style.position = 'fixed';
-            clone.style.left = `${touch.clientX - item.dataset.offsetX}px`;
-            clone.style.top = `${touch.clientY - item.dataset.offsetY}px`;
+            clone.style.left = `${rect.left}px`;
+            clone.style.top = `${rect.top}px`;
             clone.style.width = `${rect.width}px`;
             clone.style.height = `${rect.height}px`;
             clone.style.pointerEvents = 'none'; // So it doesn't interfere with elementFromPoint
             clone.style.zIndex = '1000';
             clone.classList.add('dragging-clone');
+            clone.style.transform = 'translate3d(0,0,0)'; // Enable GPU acceleration
             document.body.appendChild(clone);
             draggedItem.style.opacity = '0'; // Hide original item
             draggedItem.clone = clone; // Store clone reference
+
+            console.log('touchstart - original rect:', rect);
+            console.log('touchstart - clone position:', clone.style.left, clone.style.top);
         });
 
         item.addEventListener('touchmove', (e) => {
@@ -100,8 +104,12 @@ function addDragAndDropListeners() {
             if (!draggedItem || !draggedItem.clone) return;
 
             const touch = e.touches[0];
+            // Move the clone based on touch position and initial offset
             draggedItem.clone.style.left = `${touch.clientX - draggedItem.dataset.offsetX}px`;
             draggedItem.clone.style.top = `${touch.clientY - draggedItem.dataset.offsetY}px`;
+
+            console.log('touchmove - touch clientX, clientY:', touch.clientX, touch.clientY);
+            console.log('touchmove - clone position:', draggedItem.clone.style.left, draggedItem.clone.style.top);
 
             // Determine the element under the touch
             draggedItem.clone.style.display = 'none'; // Temporarily hide clone to get element underneath
