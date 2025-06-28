@@ -3,6 +3,7 @@ const exampleTaskbar = document.getElementById('example-taskbar');
 const checkButton = document.getElementById('check-button');
 const resultMessage = document.getElementById('result-message');
 const levelElement = document.getElementById('current-level');
+const timeLeftElement = document.getElementById('time-left');
 
 const ALL_ICONS = ['💻', '📁', '📧', '🛒', '🎮', '🎵', '📸', '📊', '💡', '🚀', '📚', '💬', '⚙️', '🔒', '🌐', '⏰', '📅', '📞', '🔍', '🗑️', '✏️']; // 最大21個の絵文字アイコンのリスト
 
@@ -12,6 +13,9 @@ let initialTouchX = 0;
 let initialTouchY = 0;
 let initialElementX = 0;
 let initialElementY = 0;
+
+let timeLeft = 60;
+let timerInterval;
 
 function shuffle(array) {
     let currentIndex = array.length,  randomIndex;
@@ -30,11 +34,42 @@ function createIcon(emoji) {
     return item;
 }
 
+function startTimer() {
+    clearInterval(timerInterval);
+    timeLeftElement.textContent = timeLeft;
+    timerInterval = setInterval(() => {
+        timeLeft--;
+        timeLeftElement.textContent = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            gameOver();
+        }
+    }, 1000);
+}
+
+function gameOver() {
+    resultMessage.textContent = `時間切れ！ゲームオーバー！最終レベル: ${currentLevel}`; 
+    resultMessage.style.color = 'red';
+    checkButton.disabled = true;
+    // Disable drag and drop
+    const taskbarItems = document.querySelectorAll('#taskbar .taskbar-item');
+    taskbarItems.forEach(item => {
+        item.removeEventListener('dragstart', handleDragStart);
+        item.removeEventListener('dragend', handleDragEnd);
+        item.removeEventListener('touchstart', handleTouchStart);
+        item.removeEventListener('touchmove', handleTouchMove);
+        item.removeEventListener('touchend', handleTouchEnd);
+    });
+    taskbar.removeEventListener('dragover', handleDragOver);
+}
+
 function initGame() {
     taskbar.innerHTML = '';
     exampleTaskbar.innerHTML = '';
     resultMessage.textContent = '';
     levelElement.textContent = `レベル ${currentLevel}`;
+    timeLeft = 60; // Reset time for new level
+    startTimer();
 
     const numIcons = 3 + (currentLevel - 1) * 2;
     const iconsForLevel = shuffle([...ALL_ICONS]).slice(0, numIcons);
@@ -51,100 +86,109 @@ function initGame() {
     });
 
     addDragAndDropListeners();
+    checkButton.disabled = false;
+}
+
+function handleDragStart(e) {
+    draggedItem = this;
+    setTimeout(() => this.classList.add('dragging'), 0);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.innerHTML);
+    console.log('dragstart', this.textContent);
+}
+
+function handleDragEnd() {
+    setTimeout(() => {
+        if (draggedItem) {
+            draggedItem.classList.remove('dragging');
+        }
+        draggedItem = null;
+    }, 0);
+    console.log('dragend');
+}
+
+function handleTouchStart(e) {
+    e.preventDefault(); // Prevent scrolling
+    draggedItem = this;
+    this.classList.add('dragging');
+    
+    const touch = e.touches[0];
+    const rect = this.getBoundingClientRect();
+    
+    initialTouchX = touch.clientX;
+    initialTouchY = touch.clientY;
+    initialElementX = rect.left;
+    initialElementY = rect.top;
+
+    // Create a clone for visual feedback during touch drag
+    const clone = this.cloneNode(true);
+    clone.style.position = 'fixed';
+    clone.style.transform = `translate3d(${initialElementX}px, ${initialElementY}px, 0)`;
+    clone.style.width = `${rect.width}px`;
+    clone.style.height = `${rect.height}px`;
+    clone.style.pointerEvents = 'none'; // So it doesn't interfere with elementFromPoint
+    clone.style.zIndex = '1000';
+    clone.classList.add('dragging-clone');
+    document.body.appendChild(clone);
+    draggedItem.style.opacity = '0'; // Hide original item
+    draggedItem.clone = clone; // Store clone reference
+
+    console.log('touchstart - original rect:', rect);
+    console.log('touchstart - clone transform:', clone.style.transform);
+}
+
+function handleTouchMove(e) {
+    e.preventDefault(); // Prevent scrolling
+    if (!draggedItem || !draggedItem.clone) return;
+
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - initialTouchX;
+    const deltaY = touch.clientY - initialTouchY;
+
+    draggedItem.clone.style.transform = `translate3d(${initialElementX + deltaX}px, ${initialElementY + deltaY}px, 0)`;
+
+    console.log('touchmove - touch clientX, clientY:', touch.clientX, touch.clientY);
+    console.log('touchmove - clone transform:', draggedItem.clone.style.transform);
+
+    // Determine the element under the touch
+    // Removed display: none/'' as pointer-events: none should be sufficient
+    const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+
+    if (targetElement && targetElement.classList.contains('taskbar-item') && targetElement !== draggedItem) {
+        const afterElement = getDragAfterElement(taskbar, touch.clientX);
+        if (afterElement == null) {
+            taskbar.appendChild(draggedItem);
+        } else {
+            taskbar.insertBefore(draggedItem, afterElement);
+        }
+    }
+}
+
+function handleTouchEnd() {
+    if (!draggedItem) return;
+    draggedItem.classList.remove('dragging');
+    draggedItem.style.opacity = '1'; // Show original item
+    if (draggedItem.clone) {
+        draggedItem.clone.remove();
+        draggedItem.clone = null;
+    }
+    draggedItem = null;
+    console.log('touchend');
 }
 
 function addDragAndDropListeners() {
     const taskbarItems = document.querySelectorAll('#taskbar .taskbar-item');
     taskbarItems.forEach(item => {
-        // Mouse events
-        item.addEventListener('dragstart', (e) => {
-            draggedItem = item;
-            setTimeout(() => item.classList.add('dragging'), 0);
-            e.dataTransfer.effectAllowed = 'move'; // Re-added for desktop drag
-            e.dataTransfer.setData('text/html', item.innerHTML); // Re-added for desktop drag
-        });
-        item.addEventListener('dragend', () => {
-            setTimeout(() => {
-                if (draggedItem) {
-                    draggedItem.classList.remove('dragging');
-                }
-                draggedItem = null;
-            }, 0);
-        });
-
-        // Touch events
-        item.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // Prevent scrolling
-            draggedItem = item;
-            item.classList.add('dragging');
-            
-            const touch = e.touches[0];
-            const rect = item.getBoundingClientRect();
-            
-            initialTouchX = touch.clientX;
-            initialTouchY = touch.clientY;
-            initialElementX = rect.left;
-            initialElementY = rect.top;
-
-            // Create a clone for visual feedback during touch drag
-            const clone = item.cloneNode(true);
-            clone.style.position = 'fixed';
-            clone.style.transform = `translate3d(${initialElementX}px, ${initialElementY}px, 0)`;
-            clone.style.width = `${rect.width}px`;
-            clone.style.height = `${rect.height}px`;
-            clone.style.pointerEvents = 'none'; // So it doesn't interfere with elementFromPoint
-            clone.style.zIndex = '1000';
-            clone.classList.add('dragging-clone');
-            document.body.appendChild(clone);
-            draggedItem.style.opacity = '0'; // Hide original item
-            draggedItem.clone = clone; // Store clone reference
-
-            console.log('touchstart - original rect:', rect);
-            console.log('touchstart - clone transform:', clone.style.transform);
-        });
-
-        item.addEventListener('touchmove', (e) => {
-            e.preventDefault(); // Prevent scrolling
-            if (!draggedItem || !draggedItem.clone) return;
-
-            const touch = e.touches[0];
-            const deltaX = touch.clientX - initialTouchX;
-            const deltaY = touch.clientY - initialTouchY;
-
-            draggedItem.clone.style.transform = `translate3d(${initialElementX + deltaX}px, ${initialElementY + deltaY}px, 0)`;
-
-            console.log('touchmove - touch clientX, clientY:', touch.clientX, touch.clientY);
-            console.log('touchmove - clone transform:', draggedItem.clone.style.transform);
-
-            // Determine the element under the touch
-            draggedItem.clone.style.display = 'none'; // Temporarily hide clone to get element underneath
-            const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
-            draggedItem.clone.style.display = ''; // Show clone again
-
-            if (targetElement && targetElement.classList.contains('taskbar-item') && targetElement !== draggedItem) {
-                const afterElement = getDragAfterElement(taskbar, touch.clientX);
-                if (afterElement == null) {
-                    taskbar.appendChild(draggedItem);
-                } else {
-                    taskbar.insertBefore(draggedItem, afterElement);
-                }
-            }
-        });
-
-        item.addEventListener('touchend', () => {
-            if (!draggedItem) return;
-            draggedItem.classList.remove('dragging');
-            draggedItem.style.opacity = '1'; // Show original item
-            if (draggedItem.clone) {
-                draggedItem.clone.remove();
-                draggedItem.clone = null;
-            }
-            draggedItem = null;
-        });
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragend', handleDragEnd);
+        item.addEventListener('touchstart', handleTouchStart);
+        item.addEventListener('touchmove', handleTouchMove);
+        item.addEventListener('touchend', handleTouchEnd);
     });
+    taskbar.addEventListener('dragover', handleDragOver);
 }
 
-taskbar.addEventListener('dragover', e => {
+function handleDragOver(e) {
     e.preventDefault();
     const afterElement = getDragAfterElement(taskbar, e.clientX);
     if (draggedItem) {
@@ -154,7 +198,8 @@ taskbar.addEventListener('dragover', e => {
             taskbar.insertBefore(draggedItem, afterElement);
         }
     }
-});
+    console.log('dragover', e.clientX);
+}
 
 function getDragAfterElement(container, x) {
     const draggableElements = [...container.querySelectorAll('.taskbar-item:not(.dragging)')];
@@ -178,6 +223,7 @@ checkButton.addEventListener('click', () => {
         resultMessage.textContent = '正解！おめでとう！';
         resultMessage.style.color = 'green';
         currentLevel++;
+        clearInterval(timerInterval); // Stop timer on correct answer
         setTimeout(() => {
             initGame();
         }, 1500); // 1.5秒後にリセット
