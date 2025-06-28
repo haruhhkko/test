@@ -4,6 +4,7 @@ const checkButton = document.getElementById('check-button');
 const resultMessage = document.getElementById('result-message');
 const levelElement = document.getElementById('current-level');
 const timeLeftElement = document.getElementById('time-left');
+const versionDisplayElement = document.getElementById('version-display');
 
 const ALL_ICONS = ['💻', '📁', '📧', '🛒', '🎮', '🎵', '📸', '📊', '💡', '🚀', '📚', '💬', '⚙️', '🔒', '🌐', '⏰', '📅', '📞', '🔍', '🗑️', '✏️']; // 最大21個の絵文字アイコンのリスト
 
@@ -12,6 +13,18 @@ let currentLevel = 1;
 
 let timeLeft = 60;
 let timerInterval;
+
+// Function to load and display the version
+async function loadVersion() {
+    try {
+        const response = await fetch('version.txt');
+        const version = await response.text();
+        versionDisplayElement.textContent = `Version: ${version.trim()}`;
+    } catch (error) {
+        console.error('Error loading version:', error);
+        versionDisplayElement.textContent = 'Version: N/A';
+    }
+}
 
 function shuffle(array) {
     let currentIndex = array.length,  randomIndex;
@@ -193,4 +206,5 @@ checkButton.addEventListener('click', () => {
 });
 
 initGame();
+loadVersion(); // Load version on game initialization
 
