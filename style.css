@@ -1,0 +1,99 @@
+body {
+    font-family: sans-serif;
+    text-align: center;
+    background-color: #f0f0f0;
+    padding-bottom: 100px; /* Add padding to avoid button being hidden */
+}
+
+#taskbar, #example-taskbar {
+    display: flex;
+    flex-wrap: nowrap; /* Changed to nowrap */
+    justify-content: center;
+    align-items: center;
+    height: 50px; /* Fixed height for single row */
+    background-color: #222;
+    padding: 5px;
+    box-sizing: border-box;
+    border-radius: 5px;
+    margin-top: 10px;
+    width: auto; /* Allow width to adjust */
+    margin-left: auto;
+    margin-right: auto;
+    overflow-x: auto; /* Add scroll if content overflows */
+}
+
+#example-taskbar .taskbar-item {
+    cursor: default;
+}
+
+.taskbar-item {
+    width: 40px;
+    height: 40px;
+    margin: 5px; /* Adjusted margin for better spacing */
+    background-color: transparent;
+    border: none;
+    cursor: grab;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 30px;
+}
+
+.taskbar-item:active {
+    cursor: grabbing;
+}
+
+.dragging {
+    opacity: 0.5;
+}
+
+#check-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#result-message {
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#example-taskbar .taskbar-item {
+    cursor: default;
+}
+
+.taskbar-item {
+    width: 40px;
+    height: 40px;
+    margin: 0 5px;
+    background-color: transparent;
+    border: none;
+    cursor: grab;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 30px; /* Increased font size for emojis */
+}
+
+.taskbar-item:active {
+    cursor: grabbing;
+}
+
+.dragging {
+    opacity: 0.5;
+}
+
+#check-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#result-message {
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: bold;
+}
