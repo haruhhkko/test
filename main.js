@@ -41,5 +41,5 @@ resetGameButton.addEventListener('click', () => {
 
 // Initial game setup
 document.addEventListener('DOMContentLoaded', () => {
-    gameLogic.initGame();
+    gameLogic.startGame();
 });

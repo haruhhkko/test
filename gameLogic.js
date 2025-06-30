@@ -1,6 +1,7 @@
-
 import { addDragAndDropListeners, removeDragAndDropListeners } from './dragAndDrop.js';
-const ALL_ICONS = ['💻', '📁', '📧', '🛒', '🎮', '🎵', '📸', '📊', '💡', '🚀', '📚', '💬', '⚙️', '🔒', '🌐', '⏰', '📅', '📞', '🔍', '🗑️', '✏️']; // 最大21個の絵文字アイコンのリスト
+
+const ALL_ICONS = ['💻', '📁', '📧', '🛒', '🎮', '🎵', '📸', '📊', '💡', '🚀', '📚', '💬', '⚙️', '🔒', '🌐', '⏰', '📅', '📞', '🔍', '🗑️', '✏️'];
+const MAX_LEVEL = 10;
 
 let currentLevel = 1;
 let timeLeft = 60;
@@ -22,6 +23,22 @@ export function setGameElements(elements) {
     timeLeftElement = elements.timeLeftElement;
 }
 
+function saveGame() {
+    localStorage.setItem('taskbarGameLevel', currentLevel);
+}
+
+function loadGame() {
+    const savedLevel = localStorage.getItem('taskbarGameLevel');
+    if (savedLevel) {
+        currentLevel = parseInt(savedLevel, 10);
+    }
+}
+
+export function startGame() {
+    loadGame();
+    initGame();
+}
+
 export function shuffle(array) {
     let currentIndex = array.length, randomIndex;
     while (currentIndex != 0) {
@@ -34,8 +51,8 @@ export function shuffle(array) {
 
 export function createIcon(emoji) {
     const item = document.createElement('div');
-    item.className = 'taskbar-item';
-    item.textContent = emoji; // テキストとして絵文字を設定
+    item.className = 'taskbar-item icon'; // Add 'icon' class for styling
+    item.textContent = emoji;
     return item;
 }
 
@@ -53,7 +70,7 @@ export function startTimer() {
 }
 
 export function gameOver() {
-    resultMessageElement.textContent = `時間切れ！ゲームオーバー！最終レベル: ${currentLevel}`; 
+    resultMessageElement.textContent = `時間切れ！ゲームオーバー！最終レベル: ${currentLevel}`;
     resultMessageElement.style.color = 'red';
     checkButtonElement.disabled = true;
     removeDragAndDropListeners();
@@ -64,13 +81,13 @@ export function initGame() {
     exampleTaskbarElement.innerHTML = '';
     resultMessageElement.textContent = '';
     levelElement.textContent = `レベル ${currentLevel}`;
-    timeLeft = 60; // Reset time for new level
+    timeLeft = 60;
     startTimer();
 
-    const numIcons = 3 + (currentLevel - 1) * 2;
+    const numIcons = Math.min(3 + (currentLevel - 1) * 2, ALL_ICONS.length);
     const iconsForLevel = shuffle([...ALL_ICONS]).slice(0, numIcons);
 
-    const correctOrder = shuffle([...iconsForLevel]);
+    const correctOrder = [...iconsForLevel];
     correctOrder.forEach(emoji => {
         exampleTaskbarElement.appendChild(createIcon(emoji));
     });
@@ -82,7 +99,6 @@ export function initGame() {
     });
 
     checkButtonElement.disabled = false;
-    // 新しく生成されたアイコンにD&Dイベントリスナーを再度追加します
     addDragAndDropListeners();
 }
 
@@ -91,13 +107,25 @@ export function checkAnswer() {
     const correctOrder = [...exampleTaskbarElement.querySelectorAll('.taskbar-item')].map(item => item.textContent);
 
     if (JSON.stringify(userOrder) === JSON.stringify(correctOrder)) {
+        currentLevel++;
+        clearInterval(timerInterval);
+
+        if (currentLevel > MAX_LEVEL) {
+            resultMessageElement.textContent = 'ゲームクリア！おめでとうございます！';
+            resultMessageElement.style.color = 'blue';
+            checkButtonElement.disabled = true;
+            removeDragAndDropListeners();
+            localStorage.removeItem('taskbarGameLevel');
+            return;
+        }
+
         resultMessageElement.textContent = '正解！おめでとう！';
         resultMessageElement.style.color = 'green';
-        currentLevel++;
-        clearInterval(timerInterval); // Stop timer on correct answer
+        saveGame();
+
         setTimeout(() => {
             initGame();
-        }, 1500); // 1.5秒後にリセット
+        }, 1500);
     } else {
         resultMessageElement.textContent = '残念！もう一度挑戦！';
         resultMessageElement.style.color = 'red';
@@ -106,5 +134,6 @@ export function checkAnswer() {
 
 export function resetGameToLevel1() {
     currentLevel = 1;
+    localStorage.removeItem('taskbarGameLevel');
     initGame();
 }
