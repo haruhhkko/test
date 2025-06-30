@@ -14,7 +14,7 @@ export function addDragAndDropListeners() {
     const taskbarItems = taskbarElement.querySelectorAll('.taskbar-item');
     taskbarItems.forEach(item => {
         item.addEventListener('mousedown', handleDragStartOrTouchStart);
-        item.addEventListener('touchstart', handleDragStartOrTouchStart);
+        item.addEventListener('touchstart', handleDragStartOrTouchStart, { passive: false }); // passive: false for preventDefault
     });
 }
 
@@ -27,7 +27,10 @@ export function removeDragAndDropListeners() {
 }
 
 function handleDragStartOrTouchStart(e) {
-    e.preventDefault(); // Prevent default browser drag/scroll behavior
+    if (e.type === 'touchstart') {
+        e.preventDefault(); // Prevent scrolling on touch devices
+    }
+    
     draggedItem = this;
     draggedItem.classList.add('dragging');
 
@@ -43,46 +46,56 @@ function handleDragStartOrTouchStart(e) {
     // Create a clone for visual feedback
     const clone = draggedItem.cloneNode(true);
     clone.style.position = 'fixed';
-    clone.style.transform = `translate3d(${initialElementX}px, ${initialElementY}px, 0)`;
+    clone.style.transform = `translate3d(${initialElementX}px, ${initialElementY}px, 0) scale(1.1)`; // Apply scale here
     clone.style.width = `${rect.width}px`;
     clone.style.height = `${rect.height}px`;
     clone.style.pointerEvents = 'none';
     clone.style.zIndex = '1000';
     clone.classList.add('dragging-clone');
     document.body.appendChild(clone);
-    draggedItem.style.opacity = '0';
+    
+    // Make the original item invisible but keep its space
+    draggedItem.style.visibility = 'hidden'; 
     draggedItem.clone = clone;
 
     document.addEventListener('mousemove', handleDragMoveOrTouchMove);
-    document.addEventListener('touchmove', handleDragMoveOrTouchMove);
+    document.addEventListener('touchmove', handleDragMoveOrTouchMove, { passive: false }); // passive: false for preventDefault
     document.addEventListener('mouseup', handleDragEndOrTouchEnd);
     document.addEventListener('touchend', handleDragEndOrTouchEnd);
 }
 
 function handleDragMoveOrTouchMove(e) {
+    if (e.type === 'touchmove') {
+        e.preventDefault(); // Prevent scrolling on touch devices
+    }
+
     if (!draggedItem || !draggedItem.clone) return;
 
     const clientX = e.clientX || e.touches[0].clientX;
     const clientY = e.clientY || e.touches[0].clientY;
 
-    draggedItem.clone.style.transform = `translate3d(${initialElementX + (clientX - initialTouchX)}px, ${initialElementY + (clientY - initialTouchY)}px, 0)`;
+    // Move the clone
+    draggedItem.clone.style.transform = `translate3d(${initialElementX + (clientX - initialTouchX)}px, ${initialElementY + (clientY - initialTouchY)}px, 0) scale(1.1)`;
 
-    const targetElement = document.elementFromPoint(clientX, clientY);
+    // Find the element to drop after
+    const afterElement = getDragAfterElement(taskbarElement, clientX);
 
-    if (targetElement && targetElement.classList.contains('taskbar-item') && targetElement !== draggedItem) {
-        const afterElement = getDragAfterElement(taskbarElement, clientX);
-        if (afterElement == null) {
-            taskbarElement.appendChild(draggedItem);
-        } else {
-            taskbarElement.insertBefore(draggedItem, afterElement);
-        }
+    // Move the original (invisible) item to the new position
+    if (afterElement == null) {
+        taskbarElement.appendChild(draggedItem);
+    } else {
+        taskbarElement.insertBefore(draggedItem, afterElement);
     }
 }
 
 function handleDragEndOrTouchEnd() {
     if (!draggedItem) return;
+
+    // Make the original item visible again
+    draggedItem.style.visibility = 'visible';
     draggedItem.classList.remove('dragging');
-    draggedItem.style.opacity = '1';
+    
+    // Remove the clone
     if (draggedItem.clone) {
         draggedItem.clone.remove();
         draggedItem.clone = null;
