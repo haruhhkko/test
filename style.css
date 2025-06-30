@@ -77,6 +77,31 @@ body {
     background-color: #c82333;
 }
 
+#check-button {
+    display: block;
+    width: 80%;
+    max-width: 300px;
+    margin: 20px auto;
+    padding: 15px;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    background-color: #28a745;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#check-button:hover {
+    background-color: #218838;
+}
+
+#check-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
 #taskbar, #example-taskbar {
     display: flex;
     border: 1px solid #ccc;
