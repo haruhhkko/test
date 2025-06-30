@@ -87,14 +87,14 @@ body {
 }
 
 .icon {
-    width: 48px; /* 少し大きくする */
-    height: 48px;
+    width: 60px; /* アイコンのサイズを大きくする */
+    height: 60px;
     background-size: cover;
     cursor: grab;
-    border-radius: 12px; /* 角を丸くする */
+    border-radius: 15px; /* 角の丸みを調整 */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* 影をつける */
     transition: transform 0.1s ease-in-out; /* ドラッグ時のアニメーション */
-    font-size: 32px; /* 絵文字のサイズを大きくする */
+    font-size: 40px; /* 絵文字のサイズを調整 */
     display: flex;
     align-items: center;
     justify-content: center;
