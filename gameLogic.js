@@ -1,4 +1,5 @@
 
+import { addDragAndDropListeners, removeDragAndDropListeners } from './dragAndDrop.js';
 const ALL_ICONS = ['💻', '📁', '📧', '🛒', '🎮', '🎵', '📸', '📊', '💡', '🚀', '📚', '💬', '⚙️', '🔒', '🌐', '⏰', '📅', '📞', '🔍', '🗑️', '✏️']; // 最大21個の絵文字アイコンのリスト
 
 let currentLevel = 1;
@@ -55,7 +56,7 @@ export function gameOver() {
     resultMessageElement.textContent = `時間切れ！ゲームオーバー！最終レベル: ${currentLevel}`; 
     resultMessageElement.style.color = 'red';
     checkButtonElement.disabled = true;
-    // Drag and drop event listeners will be removed by dragAndDrop module
+    removeDragAndDropListeners();
 }
 
 export function initGame() {
@@ -81,6 +82,8 @@ export function initGame() {
     });
 
     checkButtonElement.disabled = false;
+    // 新しく生成されたアイコンにD&Dイベントリスナーを再度追加します
+    addDragAndDropListeners();
 }
 
 export function checkAnswer() {
