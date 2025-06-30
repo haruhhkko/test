@@ -94,6 +94,10 @@ body {
     border-radius: 12px; /* 角を丸くする */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* 影をつける */
     transition: transform 0.1s ease-in-out; /* ドラッグ時のアニメーション */
+    font-size: 32px; /* 絵文字のサイズを大きくする */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .icon:active {
