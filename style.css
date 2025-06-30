@@ -72,3 +72,21 @@
 #reset-game-button:hover {
     background-color: #c82333;
 }
+
+#taskbar, #example-taskbar {
+    display: flex;
+    border: 1px solid #ccc;
+    padding: 10px;
+    min-height: 50px;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.icon {
+    width: 40px;
+    height: 40px;
+    /* margin: 5px; */ /* gapプロパティで代用 */
+    border: 1px solid #000;
+    background-size: cover;
+    cursor: grab;
+}
